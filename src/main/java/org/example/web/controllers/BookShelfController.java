@@ -1,18 +1,18 @@
 package org.example.web.controllers;
 
 import org.apache.log4j.Logger;
+import org.example.app.exceptions.BookShelfLoginException;
+import org.example.app.exceptions.BookShelfUploadException;
 import org.example.app.services.BookService;
 import org.example.web.dto.Book;
 import org.example.web.dto.BookIdToRemove;
+import org.example.web.dto.BookRegexToRemove;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import javax.validation.Valid;
@@ -38,6 +38,7 @@ public class BookShelfController {
         logger.info(this.toString());
         model.addAttribute("book", new Book());
         model.addAttribute("bookIdToRemove", new BookIdToRemove());
+        model.addAttribute("bookRegexToRemove", new BookRegexToRemove());
         model.addAttribute("bookList", bookService.getAllBooks());
         return "book_shelf";
     }
@@ -48,6 +49,7 @@ public class BookShelfController {
             logger.info(this.toString());
             model.addAttribute("book", book);
             model.addAttribute("bookIdToRemove", new BookIdToRemove());
+            model.addAttribute("bookRegexToRemove", new BookRegexToRemove());
             model.addAttribute("bookList", bookService.getAllBooks());
             return "book_shelf";
         } else {
@@ -61,6 +63,7 @@ public class BookShelfController {
     public String removeBook(@Valid BookIdToRemove bookIdToRemove, BindingResult bindingResult, Model model) {
         if (bindingResult.hasErrors()) {
             model.addAttribute("book", new Book());
+            model.addAttribute("bookRegexToRemove", new BookRegexToRemove());
             model.addAttribute("bookList", bookService.getAllBooks());
             return "book_shelf";
         } else {
@@ -70,13 +73,26 @@ public class BookShelfController {
     }
 
     @PostMapping("/removeByRegex")
-    public String removeByRegex(@RequestParam(value = "bookRegexToRemove") String bookRegexToRemove) {
-        bookService.removeByRegex(bookRegexToRemove);
-        return "redirect:/books/shelf";
+    public String removeByRegex(@Valid BookRegexToRemove bookRegexToRemove, BindingResult bindingResult, Model model) {
+        if (bindingResult.hasErrors()) {
+            model.addAttribute("book", new Book());
+            model.addAttribute("bookIdToRemove", new BookIdToRemove());
+            model.addAttribute("bookList", bookService.getAllBooks());
+            return "book_shelf";
+        } else {
+            bookService.removeByRegex(bookRegexToRemove.getRegex());
+            return "redirect:/books/shelf";
+        }
     }
 
     @PostMapping("/uploadFile")
     public String uploadFile(@RequestParam("file") MultipartFile file) throws Exception {
+        if(file.isEmpty()){
+            logger.info("new file didn't save due to no file provided");
+            throw new BookShelfUploadException("You didn't choose the file!");
+        }
+
+
         String name = file.getOriginalFilename();
         byte[] bytes = file.getBytes();
 
@@ -96,5 +112,11 @@ public class BookShelfController {
         logger.info("new file saved at: " + serverFile.getAbsolutePath());
 
         return "redirect:/books/shelf";
+    }
+
+    @ExceptionHandler(BookShelfUploadException.class)
+    public String handleError(Model model, BookShelfUploadException exception) {
+        model.addAttribute("errorMessage", exception.getMessage());
+        return "errors/404_uploadFail";
     }
 }

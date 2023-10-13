@@ -36,9 +36,11 @@
             <tr>
                 <td>
                     <input type="text" placeholder="author" th:field="*{author}">
+                    <p th:if="${#fields.hasErrors()}">field value must be not empty, less than 15 signs and must contain only letters</p>
                 </td>
                 <td>
                     <input type="text" placeholder="book_title" th:field="*{title}">
+                    <p th:if="${#fields.hasErrors()}">field value must be not empty and less than 25 signs</p>
                 </td>
                 <td>
                     <input type="text" placeholder="size (pages)" th:field="*{size}">
@@ -66,14 +68,17 @@
         </table>
     </form>
 
-    <form method="post" th:action="@{/books/removeByRegex}">
+    <form method="post" th:action="@{/books/removeByRegex}" th:object="${bookRegexToRemove}">
         <table>
             <tr>
                 <td>
-                    <input type="text" placeholder="regex" th:name="bookRegexToRemove">
+                    <input type="text" placeholder="regex" th:field="*{regex}">
                 </td>
                 <td>
                     <input type="submit" value="remove by regex">
+                </td>
+                <td th:if="${#fields.hasErrors()}">
+                    <p>Wrong regex or not found</p>
                 </td>
             </tr>
         </table>

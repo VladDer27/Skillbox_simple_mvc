@@ -63,18 +63,20 @@ public class BookRepository<T> implements ProjectRepository<Book>, ApplicationCo
 
     @Override
     public boolean removeItemByRegex(String itemRegexToRemove) {
-        // int booksBeforeDelete = repo.size();
-        for (Book book : retreiveAll()) {
-            if (book.getAuthor().equals(itemRegexToRemove) || book.getTitle().equals(itemRegexToRemove) || book.getSize().toString().equals(itemRegexToRemove)) {
-                logger.info("remove book completed: " + book);
-                // repo.remove(book);
-            }
+        MapSqlParameterSource parameterSource = new MapSqlParameterSource();
+        if(itemRegexToRemove.matches("[0-9]+")){
+            parameterSource.addValue("size", Integer.parseInt(itemRegexToRemove));
+            jdbcTemplate.update("DELETE FROM books WHERE size = :size", parameterSource);
+        } else if(itemRegexToRemove.matches("[A-Z]?[a-z]+")){
+            parameterSource.addValue("author", itemRegexToRemove);
+            jdbcTemplate.update("DELETE FROM books WHERE author = :author", parameterSource);
+        }else{
+            parameterSource.addValue("title", itemRegexToRemove);
+            jdbcTemplate.update("DELETE FROM books WHERE title = :title", parameterSource);
         }
-//        if (repo.size() == booksBeforeDelete) {
-            logger.info("books remove is not completed, incorrect Regex is: " + itemRegexToRemove);
-            return false;
-//        }
-//        return true;
+
+        logger.info("remove book completed");
+        return true;
     }
 
     @Override

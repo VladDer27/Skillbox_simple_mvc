@@ -1,10 +1,13 @@
 package org.example.web.dto;
 
-import javax.validation.constraints.Digits;
+import javax.validation.constraints.*;
 
 public class Book {
     private Integer id;
+    @Size(min = 1, max = 15)
+    @Pattern(regexp = "[A-Z]?[a-z]+")
     private String author;
+    @Size(min = 1, max = 25)
     private String title;
     @Digits(integer = 4, fraction = 0)
     private Integer size;
